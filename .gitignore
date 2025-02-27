@@ -1,0 +1,23 @@
+# Игнорирование npm / Node.js файлов
+node_modules/
+dist/
+build/
+coverage/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+yarn.lock
+
+# Игнорирование временных файлов
+.DS_Store
+*.swp
+*.swo
+
+# IntelliJ IDEA
+.idea/
+*.iml
+out/
+
+# TypeScript
+*.tsbuildinfo
