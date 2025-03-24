@@ -5,10 +5,17 @@ export class CategoryRepository {
     constructor(private db: Db) {}
 
     // Создание новой категории
-    async createCategory(categoryData: Pick<ICategory, 'name'>): Promise<ICategory & { _id: ObjectId }> {
+    async createCategory(categoryData: Pick<ICategory, 'name' | 'allowedGroups'>): Promise<ICategory & { _id: ObjectId }> {
         const result = await this.db.collection<ICategory>('categories')
-            .insertOne({ name: categoryData.name });
-        return { _id: result.insertedId, name: categoryData.name };
+            .insertOne({
+                name: categoryData.name,
+                allowedGroups: categoryData.allowedGroups || ['user', 'admin'] // По умолчанию доступно всем
+            });
+        return {
+            _id: result.insertedId,
+            name: categoryData.name,
+            allowedGroups: categoryData.allowedGroups || ['user', 'admin']
+        };
     }
 
     // Получение списка всех категорий
@@ -28,13 +35,25 @@ export class CategoryRepository {
     }
 
     // Обновление категории по ID (обновляется только имя)
-    async updateCategory(id: string, updateData: Pick<ICategory, 'name'>): Promise<(ICategory & { _id: ObjectId }) | null> {
+    async updateCategory(id: string, updateData: Partial<ICategory>): Promise<(ICategory & { _id: ObjectId }) | null> {
         let objectId: ObjectId;
         try {
             objectId = new ObjectId(id);
         } catch {
             return null;
         }
+
+        // Создаем объект с обновляемыми полями
+        const updateFields: Partial<ICategory> = {};
+
+        if (updateData.name !== undefined) {
+            updateFields.name = updateData.name;
+        }
+
+        if (updateData.allowedGroups !== undefined) {
+            updateFields.allowedGroups = updateData.allowedGroups;
+        }
+
         const result = await this.db.collection<ICategory>('categories')
             .findOneAndUpdate(
                 { _id: objectId },

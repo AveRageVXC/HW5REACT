@@ -1,84 +1,42 @@
-import { Router, Request, Response } from 'express';
-import { CategoryService } from '../services/categoryService';
+import { Router } from 'express';
+import categoryController from '../controllers/categoryController';
+import { authMiddleware, checkRole } from '../middlewares/authMiddleware';
+import {checkCategoryAccess} from "../middlewares/categoryAccessMiddleware";
 
 const router = Router();
 
-// 1. Создание категории (POST /api/categories)
-router.post('/', async (req: Request, res: Response): Promise<void> => {
-    try {
-        const { name } = req.body;
-        const categoryService: CategoryService = req.app.locals.categoryService;
-        const createdCategory = await categoryService.createCategory({
-            name });
-        res.status(201).json({ category: createdCategory });
-    } catch (error) {
-        console.error('Ошибка при создании категории:', error);
-        res.status(500).json({ error: 'Ошибка сервера' });
-    }
-});
+// Получение всех категорий (доступно всем авторизованным)
+router.get('/', authMiddleware, categoryController.getAllCategories);
 
-// 2. Получение списка категорий (GET /api/categories)
-router.get('/', async (req: Request, res: Response): Promise<void> => {
-    try {
-        const categoryService: CategoryService = req.app.locals.categoryService;
-        const categories = await categoryService.getAllCategories();
-        res.status(200).json({ categories });
-    } catch (error) {
-        console.error('Ошибка при получении категорий:', error);
-        res.status(500).json({ error: 'Ошибка сервера' });
-    }
-});
+// Получение категории по ID (проверка доступа к конкретной категории)
+router.get('/:id',
+    authMiddleware,
+    (req, res, next) => {
+        const categoryService = req.app.locals.categoryService;
+        checkCategoryAccess(categoryService)(req, res, next);
+    },
+    categoryController.getCategoryById
+);
 
-// 3. Получение деталей категории (GET /api/categories/:id)
-router.get('/:id', async (req: Request, res: Response): Promise<void> => {
-    try {
-        const { id } = req.params;
-        const categoryService: CategoryService = req.app.locals.categoryService;
-        const category = await categoryService.getCategoryById(id);
-        if (!category) {
-            res.status(404).json({ error: 'Категория не найдена или неверный формат id' });
-            return;
-        }
-        res.status(200).json({ category });
-    } catch (error) {
-        console.error('Ошибка при получении категории:', error);
-        res.status(500).json({ error: 'Ошибка сервера' });
-    }
-});
+// Создание категории (только для админов)
+router.post('/',
+    authMiddleware,
+    checkRole(['admin']),
+    categoryController.createCategory
+);
 
-// 4. Обновление категории (PUT /api/categories/:id)
-router.put('/:id', async (req: Request, res: Response): Promise<void> => {
-    try {
-        const { id } = req.params;
-        const { name } = req.body;
-        const categoryService: CategoryService = req.app.locals.categoryService;
-        const updatedCategory = await categoryService.updateCategory(id, { name });
-        if (!updatedCategory) {
-            res.status(404).json({ error: 'Категория не найдена или неверный формат id' });
-            return;
-        }
-        res.status(200).json({ category: updatedCategory });
-    } catch (error) {
-        console.error('Ошибка при обновлении категории:', error);
-        res.status(500).json({ error: 'Ошибка сервера' });
-    }
-});
+// Обновление категории (только для админов)
+router.put('/:id',
+    authMiddleware,
+    checkRole(['admin']),
+    categoryController.updateCategory
+);
 
-// 5. Удаление категории (DELETE /api/categories/:id)
-router.delete('/:id', async (req: Request, res: Response): Promise<void> => {
-    try {
-        const { id } = req.params;
-        const categoryService: CategoryService = req.app.locals.categoryService;
-        const deletedCategory = await categoryService.deleteCategory(id);
-        if (!deletedCategory) {
-            res.status(404).json({ error: 'Категория не найдена или неверный формат id' });
-            return;
-        }
-        res.status(200).json({ message: 'Категория успешно удалена', category: deletedCategory });
-    } catch (error) {
-        console.error('Ошибка при удалении категории:', error);
-        res.status(500).json({ error: 'Ошибка сервера' });
-    }
-});
+// Удаление категории (только для админов)
+router.delete('/:id',
+    authMiddleware,
+    checkRole(['admin']),
+    categoryController.deleteCategory
+);
 
 export default router;

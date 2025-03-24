@@ -5,7 +5,7 @@ import { ObjectId } from 'mongodb';
 export class CategoryService {
     constructor(private categoryRepo: CategoryRepository) {}
 
-    async createCategory(categoryData: Pick<ICategory, 'name'>): Promise<ICategory & { _id: ObjectId }> {
+    async createCategory(categoryData: Pick<ICategory, 'name' | 'allowedGroups'>): Promise<ICategory & { _id: ObjectId }> {
         return this.categoryRepo.createCategory(categoryData);
     }
 
@@ -17,7 +17,7 @@ export class CategoryService {
         return this.categoryRepo.getCategoryById(id);
     }
 
-    async updateCategory(id: string, updateData: Pick<ICategory, 'name'>): Promise<(ICategory & { _id: ObjectId }) | null> {
+    async updateCategory(id: string, updateData: Partial<ICategory>): Promise<(ICategory & { _id: ObjectId }) | null> {
         return this.categoryRepo.updateCategory(id, updateData);
     }
 
